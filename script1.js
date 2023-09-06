@@ -68,7 +68,7 @@ function draw(){
     text('2変数関数', 20, 116);
 
     fill(255, 0, 0);
-    if(error)   text('エラー', 20, 176);
+    if(error)   text('error', 20, 176);
 
     //重ねて描画
 
