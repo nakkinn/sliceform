@@ -1,148 +1,291 @@
 //スリットフォームの設計図（svgファイル）を出力する
 
-//入力　2変数関数　
+//入力　2変数関数　板の数　板の幅　隙間の幅（板の高さは2変数関数で調整）
 
-let path = [];
+let path;
+let pathgroup = [];
+
+let board_num;
+let board_wid;
+let slit_thick;
+
+let error;
+
+let input1;
+let input2;
+let input3;
+let input4;
+
+let button1;
 
 function setup(){
-    createCanvas(windowWidth, windowHeight);
-    noLoop();
+
+    createCanvas(800, 800);
+
+    input1 = createInput();
+    input1.position(120, 20);
+    input1.value('5');  //板の数　初期値
+    input1.style('width','100px');
+    input1.changed(update);
+
+    input2 = createInput();
+    input2.position(120, 50);
+    input2.value('50'); //大きさ　初期値
+    input2.style('width','100px');
+    input2.changed(update);
+
+    input3 = createInput();
+    input3.position(120, 80);
+    input3.value('0.5');    //スリットの幅　初期値
+    input3.style('width','100px');
+    input3.changed(update);
+
+    input4 = createInput();
+    input4.position(120, 110);
+    input4.value('x*x-y*y+1');  //数式　初期値
+    input4.style('width','200px');
+    input4.changed(update);
+    
+    button1 = createButton('SVGダウンロード');
+    button1.position(20, 140); 
+    button1.mousePressed(downloadevent);
+
+
+    update();
+
 }
 
 function draw(){
-    background(255);
 
+    background(240);
 
-    let x0 = 50;
-    let y0 = 50;
+    noStroke();
+    fill(0);
 
-    let wid = 100;
-    let hei = 30;
+    text('板の数', 20, 26);
+    text('大きさ', 20, 56);
+    text('スリット幅', 20, 86);
+    text('2変数関数', 20, 116);
 
-    let thick = 0.45;
-    let m = 12;
-    let tmp;
+    fill(255, 0, 0);
+    if(error)   text('エラー', 20, 176);
 
-    /*
-    path.push([[x0+wid,y0],[x0+wid,y0+hei]]);
-    path.push([[x0,y0+hei],[x0,y0]]);
+    //重ねて描画
 
-    path.push([[x0,y0],[x0+wid/(m+1)-thick/2,y0]]);
-    path.push([[x0+wid-wid/(m+1)+thick/2,y0],[x0+wid,y0]]);
-    for(let i=1; i<m; i++){
-        path.push([[x0+wid/(m+1)*i+thick/2,y0],[x0+wid/(m+1)*(i+1)-thick/2,y0]]);
+    stroke(0);
+    translate(10, 600);
+
+    push();
+    scale(240/board_wid);
+    strokeWeight(0.25);
+
+    for(let k=0; k<board_num; k++){
+        for(let i=0; i<pathgroup[k].length; i++){
+            for(let j=0; j<pathgroup[k][i].length-1; j++){
+                line(pathgroup[k][i][j][0], pathgroup[k][i][j][1], pathgroup[k][i][j+1][0], pathgroup[k][i][j+1][1])
+            }
+        }
     }
 
-    for(let i=1; i<=m; i++){
-        path.push([[x0+wid/(m+1)*i-thick/2,y0],[x0+wid/(m+1)*i-thick/2,y0+hei/2]]);
-        path.push([[x0+wid/(m+1)*i-thick/2,y0+hei/2],[x0+wid/(m+1)*i+thick/2,y0+hei/2]]);
-        path.push([[x0+wid/(m+1)*i+thick/2,y0+hei/2],[x0+wid/(m+1)*i+thick/2,y0]]);
+    pop();
+
+    translate(400,0);
+
+    push();
+    scale(240/board_wid);
+    strokeWeight(0.25);
+
+    for(let k=board_num; k<board_num*2; k++){
+        for(let i=0; i<pathgroup[k].length; i++){
+            for(let j=0; j<pathgroup[k][i].length-1; j++){
+                line(pathgroup[k][i][j][0], pathgroup[k][i][j][1], pathgroup[k][i][j+1][0], pathgroup[k][i][j+1][1])
+            }
+        }
     }
-    */
 
-    let slit;
+    pop();
+}
 
-    for(let i=1; i<=1; i++){
 
-        slit = [];
-        for(let j=1; j<=m; j++){
-            slit.push(wid/(m+1)*j-thick/2,wid/(m+1)*j+thick/2);
+
+function downloadevent(){
+    if(!error)  createsvgfile(path);
+}
+
+
+function update(){
+
+    board_num = Number(input1.value());   //板の数
+    board_wid = Number(input2.value());  //板の幅
+    slit_thick = Number(input3.value());   //スリット幅
+    
+    const roughness = 100;  //曲線を何分割した直線で表すか
+
+    error = false;
+
+    pathgroup = [];
+
+    let maxhei = [];
+
+    //２変数関数
+    function f1(x,y){
+
+        let result;
+
+        result = eval(input4.value());
+
+        return -result*board_wid/2;
+    }
+
+
+    //パーツA
+    for(let i=1; i<=board_num; i++){
+
+        let pathtmp = [];
+
+        //スリットの両縦線を入れるx座標
+        let slit = []; 
+        for(let j=1; j<=board_num; j++){
+            slit.push(board_wid/(board_num+1)*j-slit_thick/2,board_wid/(board_num+1)*j+slit_thick/2);
         }
 
-        y0 += 60;
+        let para0 = 2/(board_num+1)*i - 1;   //２変数関数の片方のパラメータ
 
-        let x1,y1;
-
-        y1 = 100/7*i-50, x1 = 100/7*i-50;
-
-        path.push([[x0+wid,y0+hei],[x0,y0+hei]]);
         
-        
-        let m2 = 100;
-        tmp = [];
+        //底辺
+        pathtmp.push([[board_wid,0],[0,0]]); 
 
+
+        //左端縦線
+        pathtmp.push([[0,f1(-1,para0)],[0,0]]);
+        //右端縦線
+        pathtmp.push([[board_wid,f1(1,para0)],[0+board_wid,0]]);
+
+        
+        //スリット
+        for(let i=1; i<=board_num; i++){
+            //左縦線
+            pathtmp.push([[board_wid/(board_num+1)*i-slit_thick/2,f1(2/(board_num+1)*i-1-slit_thick/board_wid,para0)],[board_wid/(board_num+1)*i-slit_thick/2,(f1(2/(board_num+1)*i-1,para0))/2]]);
+            //底辺
+            pathtmp.push([[board_wid/(board_num+1)*i-slit_thick/2,(f1(2/(board_num+1)*i-1,para0))/2],[board_wid/(board_num+1)*i+slit_thick/2,(f1(2/(board_num+1)*i-1,para0))/2]]);
+            //右縦線
+            pathtmp.push([[board_wid/(board_num+1)*i+slit_thick/2,f1(2/(board_num+1)*i-1+slit_thick/board_wid,para0)],[board_wid/(board_num+1)*i+slit_thick/2,(f1(2/(board_num+1)*i-1,para0))/2]]);
+        }
+
+
+        //曲線
         let flag = true;
+        let tmp = [];   //パスの一時スタック
+        maxhei.push(0);
 
-        for(let i=0; i<=m2; i++){
+        for(let i=0; i<=roughness; i++){
 
-            if(flag && wid/m2*i>slit[0]){
-                tmp.push([x0+slit[0],y0+f1(slit[0]/wid*m2-m2/2,y1)]);
-                path.push(tmp);
+            if(flag && board_wid/roughness*i>slit[0]){
+                tmp.push([slit[0],f1(slit[0]/board_wid*2-1,para0)]);
+                pathtmp.push(tmp);
                 slit.shift();
                 flag = false;
-            }else if(!flag && wid/m2*i>slit[0]){
+            }else if(!flag && board_wid/roughness*i>slit[0]){
                 tmp = [];
-                tmp.push([x0+slit[0],y0+f1(slit[0]/wid*m2-m2/2,y1)]);
+                tmp.push([slit[0],f1(slit[0]/board_wid*2-1,para0)]);
                 slit.shift();
                 flag = true;
             }else if(flag){
-                tmp.push([x0+wid/m2*i, y0+f1(i-m2/2,y1)]);
+                tmp.push([board_wid/roughness*i, f1(i/roughness*2-1,para0)]);
+                if(maxhei[maxhei.length-1] < -f1(i/roughness*2-1,para0))   maxhei[maxhei.length-1] = -f1(i/roughness*2-1,para0);
+                if(f1(i-roughness/2,para0)>0)   error = true;      
             }
-        }
-        path.push(tmp);
 
-        path.push([[x0,y0+f1(m2/(m+1)*0-m2/2,y1)],[x0,y0+hei]]);
-        path.push([[x0+wid,y0+f1(m2/(m+1)*(m+1)-m2/2,y1)],[x0+wid,y0+hei]]);
-
-        for(let i=1; i<=m; i++){
-            path.push([[x0+wid/(m+1)*i-thick/2,y0+f1(m2/(m+1)*i-m2/2,y1)],[x0+wid/(m+1)*i-thick/2,y0+(hei+f1(m2/(m+1)*i-m2/2,y1))/2]]);
-            path.push([[x0+wid/(m+1)*i-thick/2,y0+(hei+f1(m2/(m+1)*i-m2/2,y1))/2],[x0+wid/(m+1)*i+thick/2,y0+(hei+f1(m2/(m+1)*i-m2/2,y1))/2]]);
-            path.push([[x0+wid/(m+1)*i+thick/2,y0+f1(m2/(m+1)*i-m2/2,y1)],[x0+wid/(m+1)*i+thick/2,y0+(hei+f1(m2/(m+1)*i-m2/2,y1))/2]]);
         }
+        pathtmp.push(tmp);
+
+
+        pathgroup.push(pathtmp);
 
         
-        /*
-        let dx = 100;
-        tmp = [];
-
-        //path.push([[x0+wid+dx,y0+hei],[x0+dx,y0+hei]]);
-    
-        path.push([[x0+dx,y0+hei],[x0+wid/(m+1)-thick/2+dx,y0+hei]]);
-        path.push([[x0+wid-wid/(m+1)+thick/2+dx,y0+hei],[x0+wid+dx,y0+hei]]);
-        for(let i=1; i<m; i++){
-            path.push([[x0+wid/(m+1)*i+thick/2+dx,y0+hei],[x0+wid/(m+1)*(i+1)-thick/2+dx,y0+hei]]);
-        }
-
-        for(let i=0; i<=m2; i++){
-        tmp.push([x0+wid/m2*i+dx, y0+f1(x1,i-m2/2)]);
-        }
-        path.push(tmp);
-
-        path.push([[x0+dx,y0+f1(x1,m2/(m+1)*0-m2/2)],[x0+dx,y0+hei]]);
-        path.push([[x0+wid+dx,y0+f1(x1,m2/(m+1)*(m+1)-m2/2)],[x0+wid+dx,y0+hei]]);
-
-        for(let i=1; i<=m; i++){
-            path.push([[x0+wid/(m+1)*i-thick/2+dx,y0+hei],[x0+wid/(m+1)*i-thick/2+dx,y0+(hei+f1(x1,m2/(m+1)*i-m2/2))/2]]);
-            path.push([[x0+wid/(m+1)*i-thick/2+dx,y0+(hei+f1(x1,m2/(m+1)*i-m2/2))/2],[x0+wid/(m+1)*i+thick/2+dx,y0+(hei+f1(x1,m2/(m+1)*i-m2/2))/2]]);
-            path.push([[x0+wid/(m+1)*i+thick/2+dx,y0+hei],[x0+wid/(m+1)*i+thick/2+dx,y0+(hei+f1(x1,m2/(m+1)*i-m2/2))/2]]);
-        }
-        */
 
     }
     
 
+    //パーツB
+    for(let i=1; i<=board_num; i++){
 
-    stroke(0);
-    let sc = 4;
-    for(let i=0; i<path.length; i++)    for(let j=0; j<path[i].length-1; j++){
-        line(path[i][j][0]*sc, path[i][j][1]*sc, path[i][j+1][0]*sc, path[i][j+1][1]*sc);
+        let pathtmp = [];
+
+        let para0 = 2/(board_num+1)*i - 1;   //２変数関数の片方のパラメータ
+        
+        //底辺
+        pathtmp.push([[0,0],[board_wid/(board_num+1)-slit_thick/2,0]]);
+        pathtmp.push([[board_wid-board_wid/(board_num+1)+slit_thick/2,0],[board_wid,0]]);
+        for(let i=1; i<board_num; i++){
+            pathtmp.push([[board_wid/(board_num+1)*i+slit_thick/2, 0],[board_wid/(board_num+1)*(i+1)-slit_thick/2, 0]]);
+        }
+
+
+        //左端縦線
+        pathtmp.push([[0,f1(para0,-1)],[0,0]]);
+        //右端縦線
+        pathtmp.push([[board_wid,f1(para0,1)],[board_wid,0]]);
+
+        
+        //スリット
+        for(let i=1; i<=board_num; i++){
+            //左縦線
+            pathtmp.push([[board_wid/(board_num+1)*i-slit_thick/2,0],[board_wid/(board_num+1)*i-slit_thick/2,(f1(para0,2/(board_num+1)*i-1))/2]]);
+            //底辺
+            pathtmp.push([[board_wid/(board_num+1)*i-slit_thick/2,(f1(para0,2/(board_num+1)*i-1))/2],[board_wid/(board_num+1)*i+slit_thick/2,(f1(para0,2/(board_num+1)*i-1))/2]]);
+            //右縦線
+            pathtmp.push([[board_wid/(board_num+1)*i+slit_thick/2,0],[board_wid/(board_num+1)*i+slit_thick/2,(f1(para0,2/(board_num+1)*i-1))/2]]);
+        }
+
+        //曲線
+        let tmp = [];   //パスの一時スタック
+        maxhei.push(0);
+        for(let i=0; i<=roughness; i++){
+            tmp.push([board_wid/roughness*i, f1(para0,i/roughness*2-1)]);
+            if(maxhei[maxhei.length-1]<-f1(para0,i/roughness*2-1))    maxhei[maxhei.length-1] = -f1(para0,i/roughness*2-1);
+            if(f1(para0,i/roughness*2-1)>0) error = true;
+        }
+        pathtmp.push(tmp);
+
+        pathgroup.push(pathtmp);
+
+
     }
 
-}
+    path = JSON.parse(JSON.stringify(pathgroup));
 
-function f1(x,y){
-    return 1;
-    return x*y*0.013;
-    return (x*x-y*y)*0.008;
-    return (x+y)*0.3;
-}
+    let dx=0, dy=0;
 
-function keyPressed(){
-    if(keyCode == ENTER){
-        createsvgfile(path);
+    for(let i1=0; i1<board_num; i1++){
+        dy += maxhei[i1]+5;
+        for(let i2=0; i2<path[i1].length; i2++){
+            for(let i3=0; i3<path[i1][i2].length; i3++){
+                path[i1][i2][i3][1] += dy;
+            }
+        }
     }
+
+    dx = board_wid + 5;
+    dy = 0;
+
+    for(let i1=board_num; i1<board_num*2; i1++){
+        dy += maxhei[i1]+10;
+        for(let i2=0; i2<path[i1].length; i2++){
+            for(let i3=0; i3<path[i1][i2].length; i3++){
+                path[i1][i2][i3][0] += dx;
+                path[i1][i2][i3][1] += dy;
+            }
+        }
+    }
+
+    path = path.flat(1);
+
 }
 
+
+
+//パス（ポイントリスト）からSVGファイルを生成、ダウンロード
 function createsvgfile(vtsarray){
 
     file=createWriter('cutfile.svg');
@@ -193,5 +336,4 @@ function createsvgfile(vtsarray){
     file.write(str);
 	file.close();
 
-	console.log(file);
 }
